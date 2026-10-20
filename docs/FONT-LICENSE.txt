@@ -1,0 +1,17 @@
+本项目内置的字体为 Noto Sans CJK SC Black（思源黑体 简体中文 粗体），
+经 fontTools 裁剪至 3893 个字符后打包。
+
+Noto Sans CJK
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name
+'Source'. Source is a trademark of Adobe in the United States and/or other
+countries.
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is available with a FAQ at: http://scripts.sil.org/OFL
+
+Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name
+'Source'. Source is a trademark of Adobe in the United States and/or other
+countries.
+
+The Font Software, modified by cropping to a subset of glyphs, is licensed
+under the same terms.

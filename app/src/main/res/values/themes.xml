@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 默认跟随系统（DayNight）+ 内置汉仪文黑字体 -->
+    <style name="Theme.DshConsole" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 状态栏 / 导航栏：透明，由 inset padding 让出空间 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- Android 15+ 强制 edge-to-edge，声明为 true 避免警告 -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
+        <!-- 状态栏图标颜色（浅色主题深色图标）由代码动态设置 -->
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <!-- ★全局字体 -->
+        <item name="android:fontFamily">@font/dsh_console_bold</item>
+        <item name="fontFamily">@font/dsh_console_bold</item>
+    </style>
+</resources>

@@ -1,0 +1,29 @@
+[Unit]
+Description=DSH Console backend service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=USER
+WorkingDirectory=INSTALL_DIR/server
+Environment=DSH_CONSOLE_PORT=8080
+Environment=DSH_CONSOLE_HOST=0.0.0.0
+# 文件白名单：名称:路径[:rw|ro]，逗号分隔
+Environment=DSH_CONSOLE_ROOTS=Home:/home/USER:rw,Tmp:/tmp:rw
+# 编译日志文件
+Environment=DSH_CONSOLE_LOG=/home/USER/build.log
+# 守护进程列表：名称:systemd单元名
+Environment=DSH_CONSOLE_DAEMONS=
+# 可选：启用后所有 API 需带 X-Auth-Token 头
+# Environment=DSH_CONSOLE_TOKEN=
+ExecStart=/usr/bin/node INSTALL_DIR/server/server.js
+Restart=always
+RestartSec=5
+MemoryMax=128M
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dsh-console
+
+[Install]
+WantedBy=multi-user.target

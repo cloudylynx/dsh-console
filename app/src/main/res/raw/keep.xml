@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@menu/bottom_nav,@drawable/ic_home,@drawable/ic_terminal,@drawable/ic_folder,@drawable/ic_message,@drawable/ic_dsh,@drawable/ic_settings,@drawable/ic_refresh,@drawable/ic_keyboard,@drawable/ic_command,@drawable/ic_launcher,@mipmap/ic_launcher,@mipmap/ic_launcher_round,@mipmap/ic_launcher_foreground,@font/dsh_console_bold" />
