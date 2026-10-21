@@ -55,9 +55,13 @@ sudo nano /etc/systemd/system/dsh-console.service
 |---|---|---|
 | `DSH_CONSOLE_PORT` | 监听端口 | `8080` |
 | `DSH_CONSOLE_HOST` | 监听地址 | `0.0.0.0` |
-| `DSH_CONSOLE_ROOTS` | 文件白名单 `名称:路径[:rw\|ro]` | Home + /tmp |
+| `DSH_CONSOLE_ROOTS` | 文件白名单 `名称:路径[:rw\|ro]`，逗号分隔 | `Home:$HOME:rw,Tmp:/tmp:rw` |
 | `DSH_CONSOLE_LOG` | 编译日志文件路径 | `./build.log` |
-| `DSH_CONSOLE_DAEMONS` | 守护进程 `名称:单元名` | 空 |
+| `DSH_CONSOLE_STATE_DIR` | 任务/消息持久化目录 | `./state` |
+| `DSH_CONSOLE_DAEMONS` | 守护进程 `名称:单元名[:critical\|optional]` | 空 |
+| `DSH_CONSOLE_DISK_PATH` | 磁盘使用率统计的挂载点 | `/` |
+| `DSH_CONSOLE_MAX_UPLOAD` | 上传大小上限（字节） | `2147483648`（2 GiB） |
+| `DSH_CONSOLE_CMDS_FILE` | 自定义快捷命令 JSON 文件 | 内置只读命令集 |
 | `DSH_CONSOLE_TOKEN` | API 令牌（可选） | 空 |
 
 改完重启：
@@ -136,33 +140,62 @@ dsh-console/
 │       └── res/
 ├── server/                   # Node 后端
 │   ├── server.js             # 统一服务（状态/任务/消息/文件/日志）
+│   ├── package.json          # npm start / npm test
 │   ├── install.sh            # 安装脚本
-│   └── systemd/
+│   ├── systemd/              # systemd 单元
+│   └── test/
+│       └── contract.test.js  # 接口契约测试（锁住 App 依赖的字段名）
 └── docs/
 ```
 
 ## API
 
-所有接口都在一个端口上。启用 `DSH_CONSOLE_TOKEN` 后需带 `X-Auth-Token` 头。
+所有接口都在一个端口上。启用 `DSH_CONSOLE_TOKEN` 后需带 `X-Auth-Token` 头（或 `?token=`）。
+
+### 核心接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/status` | 系统状态 |
-| GET | `/api/daemons` | 守护进程 |
-| GET | `/api/diagnose` | 一键诊断 |
-| GET | `/api/tasks` | 任务列表 |
-| POST | `/api/task` | 上报任务 |
-| POST | `/api/task/done` | 结束任务（`{"all":true}` 全部清空） |
-| GET | `/api/messages` | 消息列表 |
-| POST | `/api/message` | 发送消息 |
-| POST | `/api/message/read-all` | 全部已读 |
-| GET | `/api/files/roots` | 文件根目录 |
-| GET | `/api/files/list?root=0&path=/` | 列目录 |
-| GET | `/api/files/download?root=0&path=/x` | 下载 |
-| POST | `/api/files/upload?root=0&path=/&name=f` | 上传（body 为原始字节）|
-| POST | `/api/files/delete?root=0&path=/x&confirm=YES` | 删除 |
-| GET | `/api/logs` | 编译日志 |
-| GET | `/api/logs/stream` | 日志 SSE 流 |
+| GET | `/progress` | **App 首页/后台监控消费的总览**：`{ts, tasks, system, alerts, messages, daemons}` |
+| GET | `/api/status` | 扁平状态 JSON（脚本用，字段同 `progress.system`） |
+| GET | `/health` | 健康检查 |
+| GET | `/daemons` | 守护进程 |
+| GET | `/diagnose` | 一键诊断 |
+| GET | `/tasks` | 任务列表 |
+| POST | `/task` | 上报任务 `{id,name,progress,state,detail,eta}` |
+| POST | `/task/done` | 结束任务（`{"all":true}` 全部清空） |
+| GET | `/messages` | 消息列表（最近 50 条，倒序） |
+| POST | `/message` | 发送消息 `{title,body,from}` |
+| POST | `/message/read?id=` | 标记单条已读 |
+| POST | `/message/read-all` | 全部已读 |
+| GET | `/cmds` | 快捷命令列表 |
+| POST | `/cmd?id=` | 执行快捷命令，返回 `execId` |
+| GET | `/cmd/result?id=` | 轮询命令输出 `{running,code,output}` |
+| GET | `/roots` | 文件根目录 |
+| GET | `/list?root=0&path=/` | 列目录（`items[]`、`absPath`、`count`、`writable`） |
+| GET | `/info?root=0&path=/x` | 文件详情 |
+| GET | `/download?root=0&path=/x` | 下载（支持 `Range` 断点续传） |
+| POST | `/upload?root=0&path=/&name=f` | 上传（body 为原始字节） |
+| POST | `/delete?root=0&path=/x&confirm=YES` | 删除（必须显式确认） |
+| GET | `/api/logs` | 编译日志：**浏览器/WebView 打开是页面**，`Accept: application/json` 或 `?format=json` 时返回 JSON |
+| GET | `/api/logs/stream` | 日志 SSE 实时流 |
+
+> `progress` / `list` / `cmds` 等路径前面的 `/api` 可以省略（如 `/api/status` ≡ `/status`），
+> 两套路径都保留，方便旧脚本平滑迁移。
+
+### 关于 `/progress` 的字段契约
+
+App 端的 `Snapshot.java` 会**逐个字段**读取 `system` 对象，字段名和类型是硬约定：
+
+```
+cpu(int %) cpuCores cpuModel load1 load5 cpuTemp(int)
+mem(int %) memTotal memUsed memFree swapTotal swapFree
+disk(int %) diskFree diskTotal tailscale(bool) uptime host
+netRx netTx netRxSpeed netTxSpeed netIface
+diskRead diskWrite diskReadSpeed diskWriteSpeed diskIface
+```
+
+改后端时不要随手重命名这些字段，否则首页会显示全 0。
 
 ## 安全说明
 
@@ -173,6 +206,20 @@ dsh-console/
 - App **不预置任何默认服务器**，必须由使用者配置
 
 建议：后端只监听局域网，或在防火墙上只放行你手机所在的网段。
+
+## 测试
+
+后端自带一份自包含的接口契约测试（会自己起临时实例、造临时目录，测完自动清理）：
+
+```bash
+cd server
+npm test          # 或 node test/contract.test.js
+```
+
+它会断言 App 真正依赖的那些字段名和类型 —— 比如 `/progress` 必须有 `system` 对象、
+`/list` 必须返回 `items` 而不是 `entries`、`root` 必须是字符串、删除必须二次确认、
+`../../` 和符号链接逃逸必须被拦。**这些地方一旦改崩，App 不会报错，只会安静地显示
+全 0 / 空目录 / 只读**，所以必须有断言看着。
 
 ## 构建
 

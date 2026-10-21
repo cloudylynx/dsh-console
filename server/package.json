@@ -1,0 +1,15 @@
+{
+  "name": "dsh-console-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DSH 控制台后端：状态 / 任务 / 消息 / 文件 / 日志 合并服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/contract.test.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "license": "MIT"
+}

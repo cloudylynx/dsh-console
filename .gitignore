@@ -14,6 +14,8 @@ keystore.properties
 *.log
 server/tasks.json
 server/messages.json
+server/state/
+commands.json
 
 # 系统
 .DS_Store

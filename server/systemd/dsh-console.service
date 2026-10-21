@@ -9,18 +9,35 @@ User=USER
 WorkingDirectory=INSTALL_DIR/server
 Environment=DSH_CONSOLE_PORT=8080
 Environment=DSH_CONSOLE_HOST=0.0.0.0
-# 文件白名单：名称:路径[:rw|ro]，逗号分隔
+# 文件白名单：名称:路径[:rw|ro]，逗号分隔（路径里允许有冒号）
 Environment=DSH_CONSOLE_ROOTS=Home:/home/USER:rw,Tmp:/tmp:rw
 # 编译日志文件
 Environment=DSH_CONSOLE_LOG=/home/USER/build.log
-# 守护进程列表：名称:systemd单元名
+# 守护进程列表：名称:单元名[:critical|optional]，逗号分隔
+#   例：Environment=DSH_CONSOLE_DAEMONS=SSH:ssh:critical,DSH:dsh-web:optional
 Environment=DSH_CONSOLE_DAEMONS=
+# 任务 / 消息持久化目录（由下面的 StateDirectory 自动创建并授权给 User）
+Environment=DSH_CONSOLE_STATE_DIR=/var/lib/dsh-console
+# 磁盘使用率统计的挂载点
+Environment=DSH_CONSOLE_DISK_PATH=/
+# 上传大小上限（字节），默认 2 GiB
+# Environment=DSH_CONSOLE_MAX_UPLOAD=2147483648
+# 自定义快捷命令（JSON 数组文件），不设则用内置只读命令集
+# Environment=DSH_CONSOLE_CMDS_FILE=/etc/dsh-console/commands.json
 # 可选：启用后所有 API 需带 X-Auth-Token 头
 # Environment=DSH_CONSOLE_TOKEN=
+
+StateDirectory=dsh-console
+StateDirectoryMode=0750
+
 ExecStart=/usr/bin/node INSTALL_DIR/server/server.js
 Restart=always
 RestartSec=5
-MemoryMax=128M
+MemoryMax=192M
+# 基础加固（不影响 /home 与 /tmp 的读写白名单）
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateDevices=true
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=dsh-console
