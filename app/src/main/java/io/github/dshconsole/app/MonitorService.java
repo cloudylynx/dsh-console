@@ -84,9 +84,20 @@ public class MonitorService extends Service {
 
         if (!running) {
             running = true;
-            startForeground(NOTIF_ID,
-                    Notifier.buildServiceNotification(this, "正在监控编译机状态"));
-            DebugLog.i("MonitorService started (foreground)");
+            try {
+                startForeground(NOTIF_ID,
+                        Notifier.buildServiceNotification(this, "正在监控编译机状态"));
+                DebugLog.i("MonitorService started (foreground)");
+            } catch (Throwable t) {
+                // ★Android 12+：后台禁止启动前台服务；
+                //   Android 15+：禁止从 BOOT_COMPLETED 启动 dataSync 型前台服务。
+                //   系统抛异常时不能让它冒泡到进程顶层（否则直接闪退），
+                //   这里降级为「不监控、安静退出」。
+                running = false;
+                DebugLog.w("startForeground rejected by system: " + t);
+                stopSelf();
+                return START_NOT_STICKY;
+            }
             poll();
         }
         return START_STICKY;
@@ -94,6 +105,13 @@ public class MonitorService extends Service {
 
     private void poll() {
         if (!running) return;
+
+        // ★还没填服务器地址时不要去撞 http://:8080/progress
+        if (!settings.isConfigured()) {
+            DebugLog.d("not configured yet, monitor idle");
+            ui.postDelayed(MonitorService.this::poll, 60000);
+            return;
+        }
 
         final String url = settings.apiUrl();
         ApiClient.fetch(url, new ApiClient.Callback() {

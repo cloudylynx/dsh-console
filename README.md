@@ -223,13 +223,20 @@ npm test          # 或 node test/contract.test.js
 
 ## 构建
 
+前置：**JDK 17+**、**Android SDK 36**（用 `ANDROID_HOME` 或仓库根目录的 `local.properties` 指向 SDK）。
+
 ```bash
-# 需要 JDK 17+、Android SDK 36
-cd app
-./gradlew assembleRelease
+# 仓库自带 Gradle Wrapper，不需要本机装 gradle
+./gradlew assembleRelease      # 产物: app/build/outputs/apk/release/app-release.apk
+./gradlew installDebug         # 直接装到已连接的设备
 ```
 
-**签名**：release 构建默认不签名。需要签名时在 `~/.gradle/gradle.properties` 里配置：
+> Wrapper 默认从腾讯云镜像拉 Gradle 8.14（`services.gradle.org` 会 307 跳到
+> GitHub Releases，国内经常拉不动）。海外网络可以改
+> `gradle/wrapper/gradle-wrapper.properties` 里的 `distributionUrl` 回官方地址。
+
+**签名**：release 构建默认不签名（开源版由使用者自行签名）。需要签名时在
+`~/.gradle/gradle.properties` 里配置：
 
 ```properties
 DSHCONSOLE_STORE_FILE=/绝对路径/release.keystore
@@ -238,7 +245,8 @@ DSHCONSOLE_KEY_ALIAS=dshconsole
 DSHCONSOLE_KEY_PASSWORD=***
 ```
 
-密钥库不要提交到仓库。
+密钥库不要提交到仓库（`.gitignore` 已经排除了 `*.keystore`）。
+没配置签名时会产出一个未签名的 release APK，可以直接用于分发测试。
 
 ## License
 

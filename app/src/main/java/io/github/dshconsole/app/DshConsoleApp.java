@@ -2,14 +2,10 @@ package io.github.dshconsole.app;
 
 import android.app.Application;
 import android.content.Context;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Build;
 import android.util.TypedValue;
-import android.view.ContextThemeWrapper;
 
 import com.google.android.material.color.DynamicColors;
-import com.google.android.material.color.MaterialColors;
 
 /**
  * Application 类
@@ -32,21 +28,15 @@ public class DshConsoleApp extends Application {
         // 主题模式（跟随系统/浅色/深色）
         MainActivity.applyTheme(s.getThemeMode());
 
-        // ★莫奈取色：如果选了「莫奈」，用 DynamicColors 让整个 App 跟随壁纸
-        if (s.getAccentMode() == AppSettings.ACCENT_MONET) {
-            try {
-                if (DynamicColors.isDynamicColorAvailable()) {
-                    DynamicColors.applyToActivitiesIfAvailable(this);
-                    DebugLog.i("DynamicColors: available, applied");
-                } else {
-                    // Android 11 及以下没有动态取色
-                    DebugLog.i("DynamicColors: not available (需要 Android 12+)");
-                }
-            } catch (Throwable t) {
-                DebugLog.e("DynamicColors apply failed", t);
-            }
-        } else {
-            DebugLog.i("accent mode = " + s.getAccentMode() + " (fixed color)");
+        // ★强调色的实际应用放在 applyAccentToTheme（每个 Activity 创建时调），
+        //   因为「莫奈 / 固定色」是可以在设置里随时切换的，
+        //   如果在这里一次性 applyToActivitiesIfAvailable，切换后就不会再生效。
+        try {
+            boolean monetAvailable = DynamicColors.isDynamicColorAvailable();
+            DebugLog.i("accent mode = " + s.getAccentMode()
+                    + " · DynamicColors " + (monetAvailable ? "available" : "unavailable"));
+        } catch (Throwable t) {
+            DebugLog.e("DynamicColors probe failed", t);
         }
     }
     /** ★安装崩溃处理器（保存堆栈，便于排查） */
@@ -92,30 +82,66 @@ public class DshConsoleApp extends Application {
 
 
     /**
+     * 固定强调色对应的主题覆盖层。
+     * 索引 = accentMode - 1（0 是莫奈，没有覆盖层）。
+     * 浅色 / 深色两份定义分别在 res/values/themes.xml 和 res/values-night/themes.xml，
+     * 用同名 style，系统会按当前深浅色自动挑，这里不用判断。
+     */
+    private static final int[] ACCENT_OVERLAYS = {
+            R.style.ThemeOverlay_DshConsole_Accent1,   // 蓝
+            R.style.ThemeOverlay_DshConsole_Accent2,   // 绿
+            R.style.ThemeOverlay_DshConsole_Accent3,   // 橙
+            R.style.ThemeOverlay_DshConsole_Accent4,   // 紫
+            R.style.ThemeOverlay_DshConsole_Accent5,   // 红
+            R.style.ThemeOverlay_DshConsole_Accent6,   // 青
+            R.style.ThemeOverlay_DshConsole_Accent7,   // 粉
+            R.style.ThemeOverlay_DshConsole_Accent8,   // 灰
+    };
+
+    /**
      * 把强调色应用到给定的 Activity 主题。
      *
-     * · 莫奈模式：什么都不做（DynamicColors 已经处理）
-     * · 固定色模式：覆盖 theme 的 colorPrimary / colorOnPrimary 等
+     * · 莫奈模式：交给 DynamicColors（这里再调一次，保证「固定色 → 莫奈」
+     *   这种切换也能立即生效，而不是要杀进程重开）
+     * · 固定色模式：在 setContentView 之前叠一层 ThemeOverlay，
+     *   覆盖 colorPrimary / colorPrimaryContainer 等，Material3 控件自然跟随。
+     *
+     * ★调用时机：必须在 Activity 里任何 View 创建之前（MainActivity.onCreate
+     *   在 super.onCreate 之后、buildUi 之前调用）。
      */
     public void applyAccentToTheme(android.app.Activity activity, AppSettings settings) {
         if (activity == null || settings == null) return;
 
         int mode = settings.getAccentMode();
+
         if (mode == AppSettings.ACCENT_MONET) {
-            return;   // 动态取色由 DynamicColors 接管
+            // 动态取色由 DynamicColors 接管；从固定色切回来时也要能生效
+            try {
+                if (DynamicColors.isDynamicColorAvailable()) {
+                    DynamicColors.applyToActivityIfAvailable(activity);
+                    DebugLog.i("accent: monet applied to activity");
+                } else {
+                    DebugLog.i("accent: monet requested but unavailable (< Android 12)");
+                }
+            } catch (Throwable t) {
+                DebugLog.e("accent: monet apply failed", t);
+            }
+            return;
         }
 
-        int color = settings.getAccentColor();
+        int idx = mode - 1;
+        if (idx < 0 || idx >= ACCENT_OVERLAYS.length) {
+            DebugLog.w("accent: unknown mode " + mode + ", keep default theme");
+            return;
+        }
+
         try {
-            // 生成一个派生主题，覆盖主色
-            android.content.res.Resources.Theme theme = activity.getTheme();
-            // 用 ColorStateList 覆盖（Material3 用 colorPrimary 系列）
-            // 注意：直接 setAttribute 需要 API 21+ 的 Theme.applyStyle，
-            // 这里改用运行时给控件染色（在 Activity 里做），
-            // 或者用一个固定的 overlay 主题。
-            DebugLog.d("accent fixed color: #" + Integer.toHexString(color));
+            activity.getTheme().applyStyle(ACCENT_OVERLAYS[idx], true);
+            String name = (mode < AppSettings.ACCENT_NAMES.length)
+                    ? AppSettings.ACCENT_NAMES[mode] : String.valueOf(mode);
+            DebugLog.i("accent: overlay applied (" + name + ")");
         } catch (Throwable t) {
-            DebugLog.e("applyAccentToTheme failed", t);
+            DebugLog.e("accent: overlay apply failed", t);
         }
     }
 

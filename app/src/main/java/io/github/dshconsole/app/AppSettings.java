@@ -37,7 +37,11 @@ public class AppSettings {
     private static final String K_KEYPAD_THEME = "keypad_theme";
     private static final String K_TAB_ORDER = "tab_order";
     private static final String K_TAB_ORDER_VER = "tab_order_ver";
-    /** 顺序格式版本：6 栏之后为 2 */
+    /**
+     * 底栏顺序的格式版本。
+     * 历史上有过栏数变化，旧版本存下来的顺序按下标已经对不上，
+     * 所以版本号一变就把已存的顺序作废、回到默认顺序。
+     */
     private static final int TAB_ORDER_VER = 3;
 
     public static final int THEME_SYSTEM = 0;
@@ -176,51 +180,70 @@ public class AppSettings {
 
     /**
      * 底栏顺序
+     *
      * 索引含义: 0=首页 1=终端 2=文件 3=DSH 4=设置
      * 默认: [0,1,2,3,4]
+     *
+     * ★这里所有下标都必须以 TAB_NAMES.length 为界：
+     *   旧代码写的是 `v < 6` 但 `used[]` 只有 5 个元素，
+     *   一旦 SharedPreferences 里存进 "5" 就会越界崩溃。
      */
     private static final String DEFAULT_ORDER = "0,1,2,3,4";
 
+    /** 底栏项数量（TAB_NAMES / TAB_ICONS / TAB_IDS 共用） */
+    private static final int TAB_COUNT = 5;
+
     public int[] getTabOrder() {
-        // ★版本迁移：旧的 5 栏顺序（"0,1,2,3,4"）与 6 栏不兼容，重置
+        // ★版本迁移：旧格式的顺序与当前栏数不兼容，重置
         int savedVer = sp.getInt(K_TAB_ORDER_VER, 1);
         if (savedVer < TAB_ORDER_VER) {
             sp.edit().remove(K_TAB_ORDER)
                     .putInt(K_TAB_ORDER_VER, TAB_ORDER_VER).apply();
             DebugLog.i("tab order migrated to v" + TAB_ORDER_VER);
         }
+
         String raw = sp.getString(K_TAB_ORDER, DEFAULT_ORDER);
         String[] parts = raw.split(",");
-        int[] out = new int[5];
-        boolean[] used = new boolean[5];
+        int[] out = new int[TAB_COUNT];
+        boolean[] used = new boolean[TAB_COUNT];
         int n = 0;
+
         for (String p : parts) {
+            if (n >= TAB_COUNT) break;
             try {
                 int v = Integer.parseInt(p.trim());
-                if (v >= 0 && v < 6 && !used[v]) {
+                if (v >= 0 && v < TAB_COUNT && !used[v]) {
                     out[n++] = v;
                     used[v] = true;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+                // 非法项跳过，后面统一补齐
+            }
         }
-        // 补齐缺失的
-        for (int i = 0; i < 5 && n < 5; i++) {
-            if (!used[i]) { out[n++] = i; used[i] = true; }
+
+        // 补齐缺失的项，保证返回的 5 个下标互不重复且都在范围内
+        for (int i = 0; i < TAB_COUNT && n < TAB_COUNT; i++) {
+            if (!used[i]) {
+                out[n++] = i;
+                used[i] = true;
+            }
         }
         return out;
     }
 
     public void setTabOrder(int[] order) {
         StringBuilder sb = new StringBuilder();
-        boolean[] used = new boolean[5];
-        for (int i = 0; i < order.length && sb.length() < 20; i++) {
-            int v = order[i];
-            if (v < 0 || v >= 5 || used[v]) continue;
-            used[v] = true;
-            if (sb.length() > 0) sb.append(',');
-            sb.append(v);
+        boolean[] used = new boolean[TAB_COUNT];
+        if (order != null) {
+            for (int i = 0; i < order.length && sb.length() < 20; i++) {
+                int v = order[i];
+                if (v < 0 || v >= TAB_COUNT || used[v]) continue;
+                used[v] = true;
+                if (sb.length() > 0) sb.append(',');
+                sb.append(v);
+            }
         }
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < TAB_COUNT; i++) {
             if (!used[i]) {
                 if (sb.length() > 0) sb.append(',');
                 sb.append(i);

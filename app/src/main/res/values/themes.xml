@@ -1,18 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 默认跟随系统（DayNight）+ 内置汉仪文黑字体 -->
+
+    <!--
+      基础主题：默认跟随系统深浅色（DayNight）
+      全局字体用仓库自带的思源黑体（Noto Sans CJK SC）子集，
+      授权见 docs/FONT-LICENSE.txt —— 没有使用任何商业字体。
+    -->
     <style name="Theme.DshConsole" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- 状态栏 / 导航栏：透明，由 inset padding 让出空间 -->
+        <!-- 状态栏 / 导航栏：透明，由代码里的 inset padding 让出空间 -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
-        <!-- Android 15+ 强制 edge-to-edge，声明为 true 避免警告 -->
+        <!-- Android 15+ 强制 edge-to-edge，显式声明避免警告 -->
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:enforceStatusBarContrast" tools:targetApi="29">false</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="29">false</item>
-        <!-- 状态栏图标颜色（浅色主题深色图标）由代码动态设置 -->
+        <!-- 状态栏图标颜色由代码按深浅色动态设置 -->
         <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
         <!-- ★全局字体 -->
         <item name="android:fontFamily">@font/dsh_console_bold</item>
         <item name="fontFamily">@font/dsh_console_bold</item>
+    </style>
+
+    <!--
+      ============================================================
+      固定强调色 · 浅色主题覆盖层
+      ============================================================
+      设置里选「蓝/绿/橙/紫/红/青/粉/灰」时，MainActivity 会在
+      setContentView 之前用 theme.applyStyle() 叠上对应覆盖层，
+      Material3 控件读到的 colorPrimary 系列就变成了这个颜色。
+
+      深色版本在 res/values-night/themes.xml 里，同名 style 会被系统
+      按当前深浅色自动替换，代码不需要判断。
+    -->
+    <!-- 蓝 -->
+    <style name="ThemeOverlay.DshConsole.Accent1" parent="">
+        <item name="colorPrimary">#0A84FF</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#D3E9FF</item>
+        <item name="colorOnPrimaryContainer">#053B73</item>
+        <item name="colorSecondary">#0A84FF</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#D3E9FF</item>
+        <item name="colorOnSecondaryContainer">#053B73</item>
+    </style>
+    <!-- 绿 -->
+    <style name="ThemeOverlay.DshConsole.Accent2" parent="">
+        <item name="colorPrimary">#34C759</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorPrimaryContainer">#DAF5E1</item>
+        <item name="colorOnPrimaryContainer">#175A28</item>
+        <item name="colorSecondary">#34C759</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSecondaryContainer">#DAF5E1</item>
+        <item name="colorOnSecondaryContainer">#175A28</item>
+    </style>
+    <!-- 橙 -->
+    <style name="ThemeOverlay.DshConsole.Accent3" parent="">
+        <item name="colorPrimary">#FF9F0A</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorPrimaryContainer">#FFEED3</item>
+        <item name="colorOnPrimaryContainer">#734805</item>
+        <item name="colorSecondary">#FF9F0A</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSecondaryContainer">#FFEED3</item>
+        <item name="colorOnSecondaryContainer">#734805</item>
+    </style>
+    <!-- 紫 -->
+    <style name="ThemeOverlay.DshConsole.Accent4" parent="">
+        <item name="colorPrimary">#AF52DE</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#F1E0F9</item>
+        <item name="colorOnPrimaryContainer">#4F2564</item>
+        <item name="colorSecondary">#AF52DE</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#F1E0F9</item>
+        <item name="colorOnSecondaryContainer">#4F2564</item>
+    </style>
+    <!-- 红 -->
+    <style name="ThemeOverlay.DshConsole.Accent5" parent="">
+        <item name="colorPrimary">#FF3B30</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFDCDA</item>
+        <item name="colorOnPrimaryContainer">#731B16</item>
+        <item name="colorSecondary">#FF3B30</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#FFDCDA</item>
+        <item name="colorOnSecondaryContainer">#731B16</item>
+    </style>
+    <!-- 青 -->
+    <style name="ThemeOverlay.DshConsole.Accent6" parent="">
+        <item name="colorPrimary">#32ADE6</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorPrimaryContainer">#DAF0FB</item>
+        <item name="colorOnPrimaryContainer">#164E67</item>
+        <item name="colorSecondary">#32ADE6</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSecondaryContainer">#DAF0FB</item>
+        <item name="colorOnSecondaryContainer">#164E67</item>
+    </style>
+    <!-- 粉 -->
+    <style name="ThemeOverlay.DshConsole.Accent7" parent="">
+        <item name="colorPrimary">#FF2D55</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#FFD9E0</item>
+        <item name="colorOnPrimaryContainer">#731426</item>
+        <item name="colorSecondary">#FF2D55</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#FFD9E0</item>
+        <item name="colorOnSecondaryContainer">#731426</item>
+    </style>
+    <!-- 灰 -->
+    <style name="ThemeOverlay.DshConsole.Accent8" parent="">
+        <item name="colorPrimary">#8E8E93</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorPrimaryContainer">#EBEBEC</item>
+        <item name="colorOnPrimaryContainer">#404042</item>
+        <item name="colorSecondary">#8E8E93</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorSecondaryContainer">#EBEBEC</item>
+        <item name="colorOnSecondaryContainer">#404042</item>
     </style>
 </resources>
