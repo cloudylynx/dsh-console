@@ -38,7 +38,7 @@
 ### 1. 部署后端
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/cloudylynx/dsh-console.git
 cd dsh-console/server
 sudo ./install.sh /opt/dsh-console
 ```
@@ -72,7 +72,7 @@ sudo systemctl restart dsh-console
 
 ### 2. 装 App
 
-从 [Releases](https://github.com/<owner>/<repo>/releases) 下载 APK 安装。
+从 [Releases](https://github.com/cloudylynx/dsh-console/releases) 下载 APK 安装。
 
 ### 3. 填服务器地址
 
