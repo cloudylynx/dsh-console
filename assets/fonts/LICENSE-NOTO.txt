@@ -1,0 +1,13 @@
+Noto Sans CJK SC Black
+======================
+
+Copyright © 2014-2021 Adobe (http://www.adobe.com/).
+
+This Font Software is licensed under the SIL Open Font License,
+Version 1.1. This license is available with a FAQ at:
+https://scripts.sil.org/OFL
+
+This font is free to use, modify, and redistribute, including
+for commercial purposes, as long as it is not sold by itself.
+
+Source: https://github.com/notofonts/noto-cjk
